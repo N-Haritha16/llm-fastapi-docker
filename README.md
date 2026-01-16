@@ -15,7 +15,6 @@ The service exposes:
 
 ## Project Structure
 
-```text
 .
 ├── app
 │   ├── __init__.py
