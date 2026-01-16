@@ -2,3 +2,8 @@ fastapi
 uvicorn[standard]
 python-dotenv
 transformers==4.57.5
+fastapi
+uvicorn[standard]
+transformers
+torch
+python-dotenv
