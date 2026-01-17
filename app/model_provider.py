@@ -1,39 +1,35 @@
 from typing import Optional
-
-from transformers import pipeline
+from transformers import AutoModelForCausalLM, AutoTokenizer
+import torch
 from app.config import settings
 
-
 class LLMProvider:
-    _generator: Optional[object] = None
+    _model: Optional[AutoModelForCausalLM] = None
+    _tokenizer: Optional[AutoTokenizer] = None
 
     def _ensure_loaded(self) -> None:
-        if self._generator is None:
-            print("Loading pipeline with model:", settings.MODEL_NAME)
-            self._generator = pipeline(
-                task="text-generation",
-                model=settings.MODEL_NAME,  # no device_map here
-            )
+        if self._model is None or self._tokenizer is None:
+            self._tokenizer = AutoTokenizer.from_pretrained(settings.MODEL_NAME)
+            self._model = AutoModelForCausalLM.from_pretrained(settings.MODEL_NAME)
 
     def generate(self, prompt: str, max_new_tokens: int | None = None) -> str:
-        print("ENTER LLMProvider.generate")
         self._ensure_loaded()
 
-        # Force up to 64 new tokens by default
-        max_tokens = max_new_tokens or 64
-        print("max_tokens:", max_tokens)
+        # Cap tokens so it stays fast
+        requested = max_new_tokens or settings.MAX_NEW_TOKENS
+        max_tokens = min(requested, settings.MAX_NEW_TOKENS)
 
-        outputs = self._generator(
-            prompt,
-            max_new_tokens=max_tokens,
-            do_sample=True,
-            top_p=0.95,
-            temperature=1.0,
-        )
+        inputs = self._tokenizer(prompt, return_tensors="pt")
+        with torch.no_grad():
+            outputs = self._model.generate(
+                **inputs,
+                max_new_tokens=max_tokens,
+                do_sample=True,
+                top_p=0.9,
+                temperature=0.8,
+            )
 
-        text = outputs[0]["generated_text"]
+        text = self._tokenizer.decode(outputs[0], skip_special_tokens=True)
         text = text.rstrip()
         text = " ".join(text.split())
-
-        print("Generated text:", text[:200])
         return text
