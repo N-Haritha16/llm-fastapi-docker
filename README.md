@@ -137,6 +137,10 @@ Value: must match API_KEY from .env
 
 If the header is missing or incorrect, the API will return an error.
 
+## Dockerhub URL
+
+https://hub.docker.com/repository/docker/harithanallamilli9702/llm-api/tags
+
 ## Notes
 
 The first call to /generate will download and load distilgpt2 if it is not present yet, which can take some time.
